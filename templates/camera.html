@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner with POST</title>
+    <style>
+        /* Material-inspired Android design styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        h1 {
+            color: #6200ea;
+        }
+        #video-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        video {
+            width: 90%;
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        canvas {
+            display: none; /* Hide canvas */
+        }
+        #capture {
+            margin-top: 20px;
+            background-color: #6200ea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        #capture:hover {
+            background-color: #3700b3;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e0f7fa;
+            color: #00796b;
+            font-size: 16px;
+            border-radius: 5px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        #errorMsg {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>QR Code Scanner</h1>
+    <div id="video-container">
+        <video id="video" autoplay></video>
+        <button id="capture">Take Photo on QR Scan</button>
+    </div>
+    <canvas id="canvas"></canvas>
+    <p id="result"></p>
+    <p id="errorMsg"></p>
+
+    <!-- jsQR library for QR code detection -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const captureButton = document.getElementById('capture');
+        const resultElement = document.getElementById('result');
+        const errorMsgElement = document.getElementById('errorMsg');
+
+        const constraints = {
+            video: {
+                facingMode: { exact: "environment" } // Use back camera
+            }
+        };
+
+        let stream;
+
+        // Start video stream with back camera
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(function (mediaStream) {
+                stream = mediaStream;
+                video.srcObject = stream;
+            })
+            .catch(function (error) {
+                errorMsgElement.textContent = `Error: ${error.message || error.name}`;
+            });
+
+        // Function to check for QR code every frame
+        function scanQRCode() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            url = window.location.href;
+            // Get image data and scan for QR code
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const qrCode = jsQR(imageData.data, imageData.width, imageData.height);
+            
+            if (qrCode) {
+                // QR code detected, show result, take photo, and send POST request
+                resultElement.textContent = `QR Code Detected: ${qrCode.data}`;
+                takePhoto(qrCode.data);
+            } else {
+                
+                resultElement.textContent = `QR Code Not Detected:`;
+                //takePhoto(2113123412);
+                
+        
+            }
+        }
+
+        // Start scanning for QR codes when the capture button is clicked
+        captureButton.addEventListener('click', function () {
+            resultElement.textContent = "Scanning for QR code...";
+            scanQRCode();
+        });
+
+        // Capture the photo and send a POST request with QR data
+        function takePhoto(qrData) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert the canvas to a data URL (base64)
+            const photoDataUrl = canvas.toDataURL('image/png');
+
+            // Send POST request with QR code data and photo data
+            sendQRData(qrData, photoDataUrl);
+
+            // Stop the camera stream after capturing
+            stream.getTracks().forEach(track => track.stop());
+        }
+
+        // Send the detected QR code and image to the server as a POST request
+        function sendQRData(qrData, imageDataUrl) {
+            const url = window.location.href;  // Replace with your server URL
+            
+            // Prepare data to send
+            const data = {
+                qr_code: qrData,
+                image: imageDataUrl,
+                url_w:url,
+                post_id: {{post_id}} // Send image as base64
+            };
+            
+            //resultElement.textContent = 'Reached here ';
+            //console.log(data);
+            // Send POST request 
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                resultElement.textContent = 'QR Code and image sent successfully!';
+                
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultElement.textContent = 'Error sending data.';
+            });
+        }
+    </script>
+
+</body>
+</html>
