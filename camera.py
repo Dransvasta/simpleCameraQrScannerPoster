@@ -4,7 +4,7 @@ app = Flask(__name__)
 g_list = dict()
 @app.route('/',methods=["GET"])
 def index():
-    return "hello world"
+    return "hello world1"
 @app.route('/camera',methods=["GET","POST"])
 def camera():
     if request.method == "POST":
