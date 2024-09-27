@@ -2,6 +2,9 @@ from flask import Flask,render_template,request,jsonify,redirect
 
 app = Flask(__name__)
 g_list = dict()
+@app.route('/',methods=["GET"])
+def index():
+    return "hello world"
 @app.route('/camera',methods=["GET","POST"])
 def camera():
     if request.method == "POST":
