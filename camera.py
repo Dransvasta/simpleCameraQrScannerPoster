@@ -31,7 +31,7 @@ def camera():
     else:
         post_id = request.args.get("post_id")
         return render_template("camera.html", post_id=post_id)
-@app.route("/g_list/<str:id>",methods=["GET"])
+@app.route("/g_list/<id>",methods=["GET"])
 def get(id):
     result_dict=dict()
     if id in g_list:
