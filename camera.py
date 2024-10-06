@@ -4,7 +4,7 @@ app = Flask(__name__)
 g_list = dict()
 @app.route('/',methods=["GET"])
 def index():
-    return "hello world1"
+    return "hello world"
 @app.route('/camera',methods=["GET","POST"])
 def camera():
     if request.method == "POST":
@@ -41,5 +41,8 @@ def get(id):
         result_dict['status']=0
         result_dict['result']="no data found with the given id"
     return jsonify(result_dict)
+@app.route('/g_list')
+def getall():
+    return {"list":f"{g_list}"}
 if __name__=="__main__":
     app.run(debug=True)
